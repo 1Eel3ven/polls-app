@@ -79,13 +79,13 @@ class QuestionDetailViewTests(TestCase):
     def test_future_question(self):
         '''Testing if the detail view of a question with a pub_date in the future returns 404'''
         question = create_question(question_text='Future question', days=5)
-        response = self.client.get(reverse('polls:detail'), args=(question.id,))
+        response = self.client.get(reverse('polls:detail', args=(question.id,)))
 
         self.assertEqual(response.status_code, 404)
 
     def test_past_question(self):
         '''Testing if the detail view of a question with a pub_date in the past displays the question'''
         question = create_question(question_text='Past question', days=-5)
-        response = self.client.get(reverse('polls:detail'), args=(question.id,))
+        response = self.client.get(reverse('polls:detail', args=(question.id,)))
 
         self.assertContains(response, question.question_text)
