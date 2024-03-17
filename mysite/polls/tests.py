@@ -27,11 +27,15 @@ class QuestionModelTests(TestCase):
         self.assertIs(recent_question.was_published_recently(), True)
 
 
-def create_question(question_text, days):
+def create_question(question_text, days, choice_text='Choice'):
     '''Creates a question that is published the given number of days (negative or positive) offset to now;
     Negative for questions published in the past; Positive for questions published in the future.'''
     time = timezone.now() + timedelta(days=days)
-    return Question.objects.create(question_text=question_text, pub_date=time)
+    question = Question.objects.create(question_text=question_text, pub_date=time)
+    if choice_text:
+        question.choice_set.create(choice_text=choice_text)
+
+    return question
 
 
 class QuestionIndexViewTests(TestCase):
@@ -87,5 +91,21 @@ class QuestionDetailViewTests(TestCase):
         '''Testing if the detail view of a question with a pub_date in the past displays the question'''
         question = create_question(question_text='Past question', days=-5)
         response = self.client.get(reverse('polls:detail', args=(question.id,)))
+
+        self.assertContains(response, question.question_text)
+
+
+class QuestionResultViewTests(TestCase):
+    def test_future_question(self):
+        '''Testing if the result view of a question with a pub_date in the future returns 404'''
+        question = create_question(question_text='Future question', days=5)
+        response = self.client.get(reverse('polls:results', args=(question.id,)))
+
+        self.assertEqual(response.status_code, 404)
+
+    def test_past_question(self):
+        '''Testing if the result view of a question with a pub_date in the past displays the question'''
+        question = create_question(question_text='Past question', days=-5)
+        response = self.client.get(reverse('polls:results', args=(question.id,)))
 
         self.assertContains(response, question.question_text)
