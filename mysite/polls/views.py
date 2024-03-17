@@ -1,4 +1,4 @@
-from django.db.models import F, Count
+from django.db.models import F
 from django.http import HttpResponseRedirect
 from django.shortcuts import render, get_object_or_404
 from django.urls import reverse
@@ -14,7 +14,7 @@ class IndexView(generic.ListView):
     def get_queryset(self):
         # returns last 5 published questions
         # Those questions that set to be published in the future and those that have no choices are ignored
-        return Question.objects.filter(pub_date__lte=timezone.now(), choice__isnull=False).order_by('-pub_date')[:5]
+        return Question.objects.filter(pub_date__lte=timezone.now(), choice__isnull=False).distinct().order_by('-pub_date')[:5]
     
 
 
@@ -24,7 +24,7 @@ class DetailView(generic.DetailView):
 
     def get_queryset(self):
         # Excludes any questions that arent published yet or have no choices;
-        return Question.objects.filter(pub_date__lte=timezone.now(), choice__isnull=False)
+        return Question.objects.filter(pub_date__lte=timezone.now(), choice__isnull=False).distinct()
 
 
 class ResultView(generic.DetailView):
@@ -33,7 +33,7 @@ class ResultView(generic.DetailView):
 
     def get_queryset(self):
         # Excludes any questions that arent published yet or have no choices;
-        return Question.objects.filter(pub_date__lte=timezone.now(), choice__isnull=False)
+        return Question.objects.filter(pub_date__lte=timezone.now(), choice__isnull=False).distinct()
 
 
 def vote(request, question_id):
