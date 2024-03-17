@@ -14,8 +14,7 @@ class IndexView(generic.ListView):
     def get_queryset(self):
         # returns last 5 published questions
         # Those questions that set to be published in the future and those that have no choices are ignored
-        q = Question.objects.annotate(num_choices=Count('choice')).filter(num_choices__isnull=False)
-        return q.filter(pub_date__lte=timezone.now()).order_by('-pub_date')[:5]
+        return Question.objects.filter(pub_date__lte=timezone.now(), choice__isnull=False).order_by('-pub_date')[:5]
     
 
 
@@ -25,8 +24,7 @@ class DetailView(generic.DetailView):
 
     def get_queryset(self):
         # Excludes any questions that arent published yet or have no choices;
-        q = Question.objects.annotate(num_choices=Count('choice')).filter(num_choices__isnull=False)
-        return q.filter(pub_date__lte=timezone.now())
+        return Question.objects.filter(pub_date__lte=timezone.now(), choice__isnull=False)
 
 
 class ResultView(generic.DetailView):
@@ -35,8 +33,7 @@ class ResultView(generic.DetailView):
 
     def get_queryset(self):
         # Excludes any questions that arent published yet or have no choices;
-        q = Question.objects.annotate(num_choices=Count('choice')).filter(num_choices__isnull=False)
-        return q.filter(pub_date__lte=timezone.now())
+        return Question.objects.filter(pub_date__lte=timezone.now(), choice__isnull=False)
 
 
 def vote(request, question_id):

@@ -27,13 +27,13 @@ class QuestionModelTests(TestCase):
         self.assertIs(recent_question.was_published_recently(), True)
 
 
-def create_question(question_text, days, choice_text='Choice'):
+def create_question(question_text, days, choice=True):
     '''Creates a question that is published the given number of days (negative or positive) offset to now;
     Negative for questions published in the past; Positive for questions published in the future.'''
     time = timezone.now() + timedelta(days=days)
     question = Question.objects.create(question_text=question_text, pub_date=time)
-    if choice_text:
-        question.choice_set.create(choice_text=choice_text)
+    if choice:
+        question.choice_set.create(choice_text='Test choice')
 
     return question
 
@@ -46,6 +46,21 @@ class QuestionIndexViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'No polls are available currently.')
         self.assertQuerySetEqual(response.context['latest_question_list'], [])
+
+    def test_question_without_choices(self):
+        '''Testing if questions without choices arent displayed'''
+        create_question(question_text='Question without choices', days=-5, choice=False)
+        response = self.client.get(reverse('polls:index'))
+
+        self.assertContains(response, 'No polls are available currently.')
+        self.assertQuerySetEqual(response.context['latest_question_list'], [])
+
+    def test_question_with_choices(self):
+        '''Testing if questions with choices are displayed'''
+        question = create_question(question_text='Question without choices', days=-5)
+        response = self.client.get(reverse('polls:index'))
+
+        self.assertQuerySetEqual(response.context['latest_question_list'], [question],)
 
     def test_past_question(self):
         '''Testing if questions with pub_date in the past are displayed'''
@@ -80,6 +95,20 @@ class QuestionIndexViewTests(TestCase):
 
 
 class QuestionDetailViewTests(TestCase):
+    def test_question_without_choices(self):
+        '''Testing if the detail view of a question without choices returns 404'''
+        question = create_question(question_text='Question without choices', days=-5, choice=False)
+        response = self.client.get(reverse('polls:detail', args=(question.id,)))
+
+        self.assertEqual(response.status_code, 404)
+
+    def test_question_with_choices(self):
+        '''Testing if the detail view of a question with choices displays it'''
+        question = create_question(question_text='Question without choices', days=-5)
+        response = self.client.get(reverse('polls:detail', args=(question.id,)))
+
+        self.assertContains(response, question.question_text)
+
     def test_future_question(self):
         '''Testing if the detail view of a question with a pub_date in the future returns 404'''
         question = create_question(question_text='Future question', days=5)
@@ -96,6 +125,20 @@ class QuestionDetailViewTests(TestCase):
 
 
 class QuestionResultViewTests(TestCase):
+    def test_question_without_choices(self):
+        '''Testing if the result view of a question without choices returns 404'''
+        question = create_question(question_text='Question without choices', days=-5, choice=False)
+        response = self.client.get(reverse('polls:results', args=(question.id,)))
+
+        self.assertEqual(response.status_code, 404)
+
+    def test_question_with_choices(self):
+        '''Testing if the result view of a question with choices displays it'''
+        question = create_question(question_text='Question without choices', days=-5)
+        response = self.client.get(reverse('polls:results', args=(question.id,)))
+
+        self.assertContains(response, question.question_text)
+
     def test_future_question(self):
         '''Testing if the result view of a question with a pub_date in the future returns 404'''
         question = create_question(question_text='Future question', days=5)
